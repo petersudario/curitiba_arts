@@ -119,7 +119,9 @@ final class ViewController: UIViewController {
             Painel de madeira instalado no plenário da Assembleia Legislativa, formado por relevos abstratos que evocam símbolos de poder, justiça e representatividade. A obra reflete a importância do legislativo na história estadual.
             """
         )
-    ]    private var filteredItems: [ArtWorksCuritiba] = []
+    ];
+    
+    private var filteredItems: [ArtWorksCuritiba] = []
 
     /// Computed property para definir filter state
     private var isFiltering: Bool {
