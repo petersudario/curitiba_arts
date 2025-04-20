@@ -5,6 +5,8 @@
 //  Created by Pedro Henrique Sudario da Silva on 20/04/25.
 //
 
+// Estrutura de dados padrão das obras de arte pra ficar evitando duplicidade de código
+
 public struct ArtWorksCuritiba {
     public let title: String
     public let artist: String

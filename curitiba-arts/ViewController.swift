@@ -7,10 +7,17 @@
 
 import UIKit
 
+/// Exibe uma coleção de obras de arte com search/filter integrado
+/// 
+/// - UISearchBar no topo: posicionamento padrão em apps
+/// - UICollectionViewFlowLayout responsivo: garante layout adaptativo em iPhones e iPads
+/// - separation of concerns: DataSource e Delegate isolam lógica de apresentação
+
 final class ViewController: UIViewController {
     private var collectionView: UICollectionView!
     private let searchBar = UISearchBar()
-    
+
+    /// Full dataset, source of truth
     private let allItems: [ArtWorksCuritiba] = [
         ArtWorksCuritiba(
             title: "Instalação da Província do Paraná",
@@ -112,145 +119,148 @@ final class ViewController: UIViewController {
             Painel de madeira instalado no plenário da Assembleia Legislativa, formado por relevos abstratos que evocam símbolos de poder, justiça e representatividade. A obra reflete a importância do legislativo na história estadual.
             """
         )
-    ]
-    private var filteredItems: [ArtWorksCuritiba] = []
-    
+    ]    private var filteredItems: [ArtWorksCuritiba] = []
+
+    /// Computed property para definir filter state
     private var isFiltering: Bool {
         let text = searchBar.text ?? ""
         return !text.isEmpty
     }
 
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         title = "Artes de Curitiba"
         view.backgroundColor = .systemBackground
-        
-        // 1) Configura UISearchBar e adiciona como subview
+
+        // Setup UISearchBar como header view
+        configureSearchBar()
+
+        // Setup UICollectionView responsivo
+        setupCollectionView()
+
+        // Activate layout constraints
+        activateConstraints()
+    }
+
+    // MARK: - Setup UI Components
+
+    private func configureSearchBar() {
         searchBar.placeholder = "Buscar título ou artista"
         searchBar.delegate = self
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(searchBar)
-        
-        // 2) Configura e adiciona UICollectionView
-        setupCollectionView()
-        
-        // 3) Ativa constraints para searchBar e collectionView
-        NSLayoutConstraint.activate([
-            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            
-            collectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
     }
-    
-    private func setupCollectionView() {
-        let flowLayout = UICollectionViewFlowLayout()
-        flowLayout.sectionInset = .init(top: 16, left: 16, bottom: 16, right: 16)
-        flowLayout.minimumInteritemSpacing = 12
-        flowLayout.minimumLineSpacing = 20
 
-        collectionView = UICollectionView(frame: .zero,
-                                          collectionViewLayout: flowLayout)
+    private func setupCollectionView() {
+        let flow = UICollectionViewFlowLayout()
+        flow.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        flow.minimumInteritemSpacing = 12
+        flow.minimumLineSpacing = 20
+
+        collectionView = UICollectionView(frame: .zero, collectionViewLayout: flow)
         collectionView.backgroundColor = .systemBackground
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.register(Cell.self, forCellWithReuseIdentifier: Cell.reuseIdentifier)
 
-        collectionView.register(Cell.self,
-                                forCellWithReuseIdentifier: Cell.reuseIdentifier)
+        // MVC pattern: view delegates para ViewController
         collectionView.dataSource = self
-        collectionView.delegate   = self
+        collectionView.delegate = self
 
         view.addSubview(collectionView)
     }
-    
+
+    private func activateConstraints() {
+        NSLayoutConstraint.activate([
+            // SearchBar top anchor no safe area para evitar notch
+            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+
+            // CollectionView ocupa resto da tela
+            collectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    // MARK: - Layout Updates
+
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
+        // Invalidate layout para adaptive resizing on rotations
         collectionView.collectionViewLayout.invalidateLayout()
     }
 }
 
+// MARK: - UICollectionViewDataSource
+
 extension ViewController: UICollectionViewDataSource {
-    
-    func collectionView(_ collectionView: UICollectionView,
-                        numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return isFiltering ? filteredItems.count : allItems.count
     }
 
-    func collectionView(_ collectionView: UICollectionView,
-                        cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let model = isFiltering
-            ? filteredItems[indexPath.item]
-            : allItems[indexPath.item]
-
-        let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: Cell.reuseIdentifier,
-            for: indexPath
-        ) as! Cell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let model = isFiltering ? filteredItems[indexPath.item] : allItems[indexPath.item]
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Cell.reuseIdentifier, for: indexPath) as! Cell
         cell.configure(with: model)
         return cell
     }
 }
 
+// MARK: - UICollectionViewDelegateFlowLayout
+
 extension ViewController: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                        sizeForItemAt indexPath: IndexPath) -> CGSize {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         guard let flow = collectionViewLayout as? UICollectionViewFlowLayout else {
             return CGSize(width: 150, height: 200)
         }
+        // Adaptive columns: 2 on compact width, 4 on regular width
         let columns: CGFloat = traitCollection.horizontalSizeClass == .regular ? 4 : 2
-        let totalSpacing = flow.sectionInset.left
-                         + flow.sectionInset.right
-                         + (columns - 1) * flow.minimumInteritemSpacing
-        let availableWidth = collectionView.bounds.width - totalSpacing
-        let width = floor(availableWidth / columns)
-        let height = width * 1.25
-        return CGSize(width: width, height: height)
+        let totalSpacing = flow.sectionInset.left + flow.sectionInset.right + (columns - 1) * flow.minimumInteritemSpacing
+        let width = floor((collectionView.bounds.width - totalSpacing) / columns)
+        return CGSize(width: width, height: width * 1.25)
     }
 }
+
+// MARK: - UICollectionViewDelegate
 
 extension ViewController: UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView,
-                        didSelectItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        // Deselection para feedback tátil
         collectionView.deselectItem(at: indexPath, animated: true)
-        let model = isFiltering
-            ? filteredItems[indexPath.item]
-            : allItems[indexPath.item]
-        // Apresenta detalhe em modal card
-        let detailVC = DetailViewController(item: model)
-        detailVC.modalPresentationStyle = .overFullScreen
-        detailVC.modalTransitionStyle = .crossDissolve
-        present(detailVC, animated: true, completion: nil)
+        let model = isFiltering ? filteredItems[indexPath.item] : allItems[indexPath.item]
+        let detail = DetailViewController(item: model)
+        detail.modalPresentationStyle = .overFullScreen
+        detail.modalTransitionStyle = .crossDissolve
+        present(detail, animated: true)
     }
 
-    func collectionView(_ collectionView: UICollectionView,
-                        didHighlightItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath) {
+        // Subtle highlight animation for touch feedback
         if let cell = collectionView.cellForItem(at: indexPath) {
-            UIView.animate(withDuration: 0.2) {
-                cell.transform = CGAffineTransform(scaleX: 0.97, y: 0.97)
-            }
+            UIView.animate(withDuration: 0.2) { cell.transform = CGAffineTransform(scaleX: 0.97, y: 0.97) }
         }
     }
 
-    func collectionView(_ collectionView: UICollectionView,
-                        didUnhighlightItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath) {
         if let cell = collectionView.cellForItem(at: indexPath) {
-            UIView.animate(withDuration: 0.2) {
-                cell.transform = .identity
-            }
+            UIView.animate(withDuration: 0.2) { cell.transform = .identity }
         }
     }
 }
+
+// MARK: - UISearchBarDelegate
 
 extension ViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        filteredItems = allItems.filter {
-            $0.title.lowercased().contains(searchText.lowercased()) ||
-            $0.artist.lowercased().contains(searchText.lowercased())
+        // Real-time filtering com case-insensitive search
+        filteredItems = allItems.filter { item in
+            item.title.lowercased().contains(searchText.lowercased()) ||
+            item.artist.lowercased().contains(searchText.lowercased())
         }
         collectionView.reloadData()
     }
