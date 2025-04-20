@@ -1,7 +1,16 @@
 # App criado em Swift 6, iOS 18 e Xcode 16, para mostrar algumas artes e artistas de Curitiba
 
-## Para rodar o app, basta bater os requisitos mencionados acima, selecionar um simulador ou dispositivo físico, e iniciar a aplicação pelo Xcode.
-## Lembre de permitir o certificado da Apple Developer Program se usar um dispositivo real
+### Para rodar o app, basta bater os requisitos mencionados acima, selecionar um simulador ou dispositivo físico, e iniciar a aplicação pelo Xcode.
+### Lembre de permitir o certificado da Apple Developer Program se usar um dispositivo real
+
+## Conceitos de programação usados
+> Clean Code
+> 
+> Boas práticas do Swift
+> 
+> Orientação a objetos
+>
+> Programmatic UI
 
 ## Link do vídeo de funcionamento do app
 
